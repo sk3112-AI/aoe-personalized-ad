@@ -319,7 +319,7 @@ async def send_ad_email(request_body: AdEmailRequest):
         email_image_url = AOE_VEHICLE_IMAGES.get(vehicle, ["https://placehold.co/600x338/1F2937/D1D5DB?text=AOE+Motors"])[0]
 
         # 3. Build the URL for the landing page
-        ad_page_url = f"https://aoe-personalized-ad.onrender.com/ad?id={request_id}" # <-- IMPORTANT: Replace with your deployed URL
+        ad_page_url = f"https://YOUR_RENDER_SERVICE_URL/ad?id={request_id}" # <-- IMPORTANT: Replace with your deployed URL
 
         # 4. Construct the email body
         email_body_html = f"""
