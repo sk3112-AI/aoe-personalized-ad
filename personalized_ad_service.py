@@ -15,6 +15,7 @@ import json
 import urllib.parse
 import time
 from datetime import datetime, date, timedelta, timezone
+import requests
 
 # Load environment variables for local development
 load_dotenv()
@@ -62,7 +63,7 @@ else:
     logging.warning("OPENAI_API_KEY environment variable is not set. AI functionalities will be limited.")
 
 # --- GOOGLE CLOUD STORAGE IMAGE URLs ---
-# Using the correct URL encoding to match the file names on GCS.
+# Updated to use the correct URL encoding to match the file names on GCS.
 AOE_VEHICLE_IMAGES = {
   "AOE Apex": [
     "https://storage.googleapis.com/aoe-motors-images/AOE%20Apex.jpg",
@@ -390,4 +391,3 @@ async def ad_landing_page(id: str):
     except Exception as e:
         logging.error(f"🚨 An unexpected error occurred while generating ad landing page for ID {id}: {e}", exc_info=True)
         return HTMLResponse("<h1>Internal Server Error</h1><p>Failed to generate the personalized ad. Please try again later.</p>", status_code=500)
-
