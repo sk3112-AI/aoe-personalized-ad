@@ -165,7 +165,6 @@ def log_email_interaction(request_id, event_type):
 
 def generate_audio(name, vehicle):
     """Generates an audio clip from text using the Gemini TTS API."""
-    # Check if Gemini API key is configured before attempting the call
     if not GEMINI_API_KEY:
         logging.error("GEMINI_API_KEY environment variable is not set. Cannot generate audio.")
         return None
@@ -187,10 +186,8 @@ def generate_audio(name, vehicle):
     }
     api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key={GEMINI_API_KEY}"
     
-    # Simple retry logic with exponential backoff
     for i in range(3):
         try:
-            # Fix: Increase the timeout to 30 seconds
             response = requests.post(api_url, json=payload, headers={'Content-Type': 'application/json'}, timeout=30)
             response.raise_for_status()
             result = response.json()
@@ -201,7 +198,7 @@ def generate_audio(name, vehicle):
             return audio_data
         except requests.exceptions.RequestException as e:
             logging.warning(f"Attempt {i+1} failed to generate audio: {e}")
-            time.sleep(2 ** i) # Exponential backoff
+            time.sleep(2 ** i)
         except Exception as e:
             logging.error(f"Error generating audio: {e}")
             return None
@@ -219,10 +216,8 @@ def generate_landing_page_html(lead_data, audio_data_base64):
     vehicle_type = vehicle_data.get('type', '')
     ad_message = AD_MESSAGES.get(vehicle_type, f"your perfect {vehicle_type}.")
     
-    # Convert audio data to a data URL
     audio_data_url = f"data:audio/wav;base64,{audio_data_base64}" if audio_data_base64 else ""
 
-    # Generate image HTML for the grid
     images_html = ""
     for image_src in vehicle_images:
         images_html += f"""
@@ -231,7 +226,6 @@ def generate_landing_page_html(lead_data, audio_data_base64):
           </div>
         """
     
-    # Generate features list HTML
     features_html = ""
     for feature in vehicle_features:
         features_html += f"""
@@ -245,7 +239,6 @@ def generate_landing_page_html(lead_data, audio_data_base64):
           </li>
         """
 
-    # Full HTML template
     return f"""
     <!DOCTYPE html>
     <html>
