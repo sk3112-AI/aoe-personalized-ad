@@ -177,11 +177,11 @@ def generate_audio(name, vehicle):
             "prebuiltVoiceConfig": {"voiceName": "Kore"}
           }
         }
-      },
-      "model": "gemini-2.5-flash-preview-tts"
+      }
     }
-    api_key = OPENAI_API_KEY
-    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key={api_key}"
+    # Fix: Use a dedicated environment variable for the Gemini API key
+    gemini_api_key = os.getenv("GEMINI_API_KEY", "")
+    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key={gemini_api_key}"
     
     # Simple retry logic with exponential backoff
     for i in range(3):
@@ -251,9 +251,6 @@ def generate_landing_page_html(lead_data, audio_data_base64):
     </head>
     <body class="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4 font-sans">
       <div class="w-full max-w-4xl bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
-        <h1 class="text-4xl font-bold text-center mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-400">
-          Personalized AOE Ad
-        </h1>
         <p class="text-center text-gray-400 mb-8">
           A special message for you from the AOE Motors team!
         </p>
