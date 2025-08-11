@@ -51,8 +51,6 @@ else:
     logging.info("SMTP sending enabled for personalized_ad_service.")
 
 # --- API KEY CONFIGURATION ---
-# The code was using OPENAI_API_KEY for the Gemini API call.
-# This variable should be separate for clarity and to prevent issues.
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
@@ -167,6 +165,11 @@ def log_email_interaction(request_id, event_type):
 
 def generate_audio(name, vehicle):
     """Generates an audio clip from text using the Gemini TTS API."""
+    # Check if Gemini API key is configured before attempting the call
+    if not GEMINI_API_KEY:
+        logging.error("GEMINI_API_KEY environment variable is not set. Cannot generate audio.")
+        return None
+        
     vehicle_type = AOE_VEHICLE_DATA.get(vehicle, {}).get('type', 'vehicle')
     message = AD_MESSAGES.get(vehicle_type, "your perfect vehicle.")
     text_prompt = f"Say cheerfully: Hello {name}, we saw you were interested in the {vehicle}. {message}. Our team is ready for you to take a test drive. Please call us at (800) 555-0199 or reply to this email to schedule a new appointment."
@@ -182,8 +185,7 @@ def generate_audio(name, vehicle):
         }
       }
     }
-    api_key = GEMINI_API_KEY or "" # Use the new GEMINI_API_KEY variable
-    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key={api_key}"
+    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key={GEMINI_API_KEY}"
     
     # Simple retry logic with exponential backoff
     for i in range(3):
@@ -324,7 +326,7 @@ async def send_ad_email(request_body: AdEmailRequest):
         email_image_url = AOE_VEHICLE_IMAGES.get(vehicle, ["https://placehold.co/600x338/1F2937/D1D5DB?text=AOE+Motors"])[0]
 
         # 3. Build the URL for the landing page
-        ad_page_url = f"https://aoe-personalized-ad.onrender.com/ad?id={request_id}" # <-- IMPORTANT: Replace with your deployed URL
+        ad_page_url = f"https://YOUR_RENDER_SERVICE_URL/ad?id={request_id}" # <-- IMPORTANT: Replace with your deployed URL
 
         # 4. Construct the email body
         email_body_html = f"""
