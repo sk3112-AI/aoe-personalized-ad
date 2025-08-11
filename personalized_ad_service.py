@@ -50,8 +50,12 @@ if not ENABLE_SMTP_SENDING:
 else:
     logging.info("SMTP sending enabled for personalized_ad_service.")
 
-# --- OPENAI CONFIGURATION ---
+# --- API KEY CONFIGURATION ---
+# The code was using OPENAI_API_KEY for the Gemini API call.
+# This variable should be separate for clarity and to prevent issues.
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
 openai_client = None
 if OPENAI_API_KEY:
     try:
@@ -63,7 +67,6 @@ else:
     logging.warning("OPENAI_API_KEY environment variable is not set. AI functionalities will be limited.")
 
 # --- GOOGLE CLOUD STORAGE IMAGE URLs ---
-# Updated to use the correct URL encoding to match the file names on GCS.
 AOE_VEHICLE_IMAGES = {
   "AOE Apex": [
     "https://storage.googleapis.com/aoe-motors-images/AOE%20Apex.jpg",
@@ -179,14 +182,14 @@ def generate_audio(name, vehicle):
         }
       }
     }
-    # Fix: Use a dedicated environment variable for the Gemini API key
-    gemini_api_key = os.getenv("GEMINI_API_KEY", "")
-    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key={gemini_api_key}"
+    api_key = GEMINI_API_KEY or "" # Use the new GEMINI_API_KEY variable
+    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key={api_key}"
     
     # Simple retry logic with exponential backoff
     for i in range(3):
         try:
-            response = requests.post(api_url, json=payload, headers={'Content-Type': 'application/json'}, timeout=10)
+            # Fix: Increase the timeout to 30 seconds
+            response = requests.post(api_url, json=payload, headers={'Content-Type': 'application/json'}, timeout=30)
             response.raise_for_status()
             result = response.json()
             part = result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0]
