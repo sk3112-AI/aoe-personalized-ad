@@ -16,6 +16,9 @@ import urllib.parse
 import time
 from datetime import datetime, date, timedelta, timezone
 import requests
+import base64
+import struct
+import re
 
 # Load environment variables for local development
 load_dotenv()
@@ -116,6 +119,27 @@ AD_MESSAGES = {
   "Electric Compact": "Drive the future. Electrify your journey with groundbreaking technology.",
   "Performance SUV": "Unleash power. Command the road with unparalleled performance."
 }
+def pcm16_mono_to_wav_b64(pcm_b64: str, sample_rate: int = 16000) -> str:
+    """Wrap base64 PCM16 mono into a proper WAV container and return base64 WAV."""
+    pcm_bytes = base64.b64decode(pcm_b64)
+    num_channels = 1
+    bits_per_sample = 16
+    byte_rate = sample_rate * num_channels * (bits_per_sample // 8)
+    block_align = num_channels * (bits_per_sample // 8)
+    data_size = len(pcm_bytes)
+    riff_size = 36 + data_size
+    header = b"RIFF" + struct.pack("<I", riff_size) + b"WAVE"
+    header += b"fmt " + struct.pack("<IHHIIHH",
+                                    16,      # fmt chunk size
+                                    1,       # PCM
+                                    num_channels,
+                                    sample_rate,
+                                    byte_rate,
+                                    block_align,
+                                    bits_per_sample)
+    header += b"data" + struct.pack("<I", data_size)
+    wav_bytes = header + pcm_bytes
+    return base64.b64encode(wav_bytes).decode("ascii")
 
 # --- API HELPER FUNCTIONS ---
 def send_email_via_smtp(recipient_email, subject, body_html):
@@ -192,15 +216,31 @@ def generate_audio(name, vehicle):
             response.raise_for_status()
             result = response.json()
             part = result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0]
-            audio_data = part.get('inlineData', {}).get('data')
+            inline = part.get('inlineData') or part.get('inline_data') or {}
+            audio_data = inline.get('data')
+            mime_type = inline.get('mimeType', '')
+
             if not audio_data:
-                raise ValueError("No audio data received from API.")
+                raise ValueError(f"No audio data received from API. Raw result keys: {list(result.keys())}")
+
+            logging.info(f"[TTS] Received audio. mimeType='{mime_type}', b64_len={len(audio_data)}")
+
+            if "pcm" in mime_type.lower():
+                m = re.search(r"rate=(\d+)", mime_type)
+                sr = int(m.group(1)) if m else 16000
+                audio_data = pcm16_mono_to_wav_b64(audio_data, sr)
+                logging.info(f"[TTS] Converted PCM->{sr}Hz WAV. final_b64_len={len(audio_data)}")
+            elif "wav" in mime_type.lower():
+                pass
+            else:
+                logging.warning(f"[TTS] Unexpected mimeType '{mime_type}'. Returning as-is; page will still embed as WAV.")
+
             return audio_data
         except requests.exceptions.RequestException as e:
             logging.warning(f"Attempt {i+1} failed to generate audio: {e}")
             time.sleep(2 ** i)
         except Exception as e:
-            logging.error(f"Error generating audio: {e}")
+            logging.error(f"Error generating audio: {e}", exc_info=True)
             return None
     logging.error("Failed to generate audio after multiple retries.")
     return None
@@ -266,7 +306,7 @@ def generate_landing_page_html(lead_data, audio_data_base64):
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-xl font-semibold">Key Features</h3>
               <button
-                onclick="document.getElementById('audio-player').play();"
+                onclick="document.getElementById('audio-player') && document.getElementById('audio-player').play();"
                 class="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-full shadow-md transition-colors duration-300 transform hover:scale-105"
                 aria-label="Play Personalized Ad Audio"
               >
