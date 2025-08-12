@@ -198,6 +198,7 @@ def generate_audio(name, vehicle):
     
     # Check if sales notes exist for the lead
     try:
+        # Fetch sales notes using the customer's full name
         response = supabase.from_(SUPABASE_TABLE_NAME).select(
             "sales_notes"
         ).eq('full_name', name).single().execute()
@@ -206,12 +207,16 @@ def generate_audio(name, vehicle):
         logging.warning(f"Failed to fetch sales notes for {name}: {e}")
         sales_notes = ''
 
-    # Define a different message if sales notes are present
-    if sales_notes and sales_notes.strip():
-        # This part of the code is an example and should be fine-tuned based on your specific needs
-        text_prompt = f"Say cheerfully: Hello {name}, our team left a note about your inquiry. We've taken your feedback on board and are ready to address your questions. Please call us at 1800123456 or reply to this email to schedule a new appointment."
+    # Check for relevance of sales notes
+    relevant_keywords = ["maintenance", "service", "cost", "price", "charging", "range", "feature"]
+    is_notes_relevant = any(keyword in sales_notes.lower() for keyword in relevant_keywords)
+
+    if is_notes_relevant and sales_notes.strip():
+        # Use sales notes in the prompt if relevant
+        text_prompt = f"Say cheerfully: Hello {name}, our team left a note about your inquiry. We've taken your feedback on board regarding {sales_notes} and are ready to address your questions. Please call us at 1800123456 or reply to this email to schedule a new appointment."
     else:
-        text_prompt = f"Say cheerfully: Hello {name}, we saw you were interested in the {vehicle}. Our team has a personalized message for you. We're ready for you to take a test drive. Please call us at 1800123456 or reply to this email to schedule a new appointment."
+        # Use a more generic, but still personalized message
+        text_prompt = f"Say cheerfully: Hello {name}, we saw you were interested in the {vehicle}. Our team has a message for you. We're ready for you to take a test drive. Please call us at 1800123456 or reply to this email to schedule a new appointment."
 
     # Use the correct voice based on vehicle type
     voice_map = {
