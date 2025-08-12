@@ -225,17 +225,17 @@ def generate_audio(name, vehicle):
     if found_keywords and sales_notes.strip():
         # Build a personalized message based on the specific keywords found
         if "pricing_financing" in found_keywords:
-            text_prompt = f"Hello {name}, we know you had questions about the pricing and financing options for the {vehicle}. Our team has some exciting details to share. Please call us at {phone_number} or reply to this email to schedule a new appointment."
+            text_prompt = f"Hello {name}, we know you had questions about the pricing and financing options for the {vehicle}. Our team has some exciting details to share. Please call us at {phone_number} or reply to this email for a detailed discussion."
         elif "maintenance_service" in found_keywords:
-            text_prompt = f"Hello {name}, we heard your feedback on long-term maintenance and service for the {vehicle}. We'd love to clarify all your doubts. Please call us at {phone_number} or reply to this email to schedule a new appointment."
+            text_prompt = f"Hello {name}, we heard your feedback on long-term maintenance and service for the {vehicle}. We'd love to clarify all your doubts. Please call us at {phone_number} or reply to this email for a detailed discussion."
         elif "ev_concerns" in found_keywords and vehicle_type == "Electric Compact":
-            text_prompt = f"Hello {name}, we understand you had some questions about the charging and range of the {vehicle}. We have the answers you need. Please call us at {phone_number} or reply to this email to schedule a new appointment."
+            text_prompt = f"Hello {name}, we understand you had some questions about the charging and range of the {vehicle}. We have the answers you need. Please call us at {phone_number} or reply to this email for a detailed discussion."
         else:
             # Fallback for relevant but unspecific notes
-            text_prompt = f"Hello {name}, we understand from our last conversation that you had a few questions. We're ready to provide some more details. Please call us at {phone_number} or reply to this email to schedule a new appointment."
+            text_prompt = f"Hello {name}, we understand from our last conversation that you had a few questions. We're ready to provide some more details. Please call us at {phone_number} or reply to this email for a detailed discussion."
     else:
         # Generic prompt for non-relevant or missing notes
-        text_prompt = f"Hello {name}, we saw you were interested in the {vehicle}. Our team has a message for you. We're ready for you to take a test drive. Please call us at {phone_number} or reply to this email to schedule a new appointment."
+        text_prompt = f"Hello {name}, we saw you were interested in the {vehicle}. We're ready for you to take a test drive. Please call us at {phone_number} or reply to this email for any queries."
 
     # Use the correct voice based on vehicle type
     voice_map = {
@@ -415,11 +415,11 @@ async def send_ad_email(request_body: AdEmailRequest):
         <html>
         <body>
           <p>Hello {customer_name},</p>
-          <p>We saw you were interested in the {vehicle}. Our team has a personalized message for you.</p>
+          <p>We saw you were interested in the {vehicle}. We were unable to reach you, so we wanted to send you this message instead .</p>
           <p>Take a look at the stunning {vehicle}:</p>
           <img src="{email_image_url}" alt="Image of {vehicle}" style="max-width: 100%; height: auto; border-radius: 8px;">
           <p>To view your personal message, click the button below:</p>
-          <a href="{ad_page_url}" style="display:inline-block; padding:10px 20px; color:#ffffff; background-color:#14b8a6; text-decoration:none; border-radius:8px;">Listen to Your Ad</a>
+          <a href="{ad_page_url}" style="display:inline-block; padding:10px 20px; color:#ffffff; background-color:#14b8a6; text-decoration:none; border-radius:8px;">Please listen to our message</a>
           <p>Sincerely,</p>
           <p>Your AOE Motors Team</p>
         </body>
