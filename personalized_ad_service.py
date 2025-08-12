@@ -119,6 +119,7 @@ AD_MESSAGES = {
   "Electric Compact": "Drive the future. Electrify your journey with groundbreaking technology.",
   "Performance SUV": "Unleash power. Command the road with unparalleled performance."
 }
+
 def pcm16_mono_to_wav_b64(pcm_b64: str, sample_rate: int = 16000) -> str:
     """Wrap base64 PCM16 mono into a proper WAV container and return base64 WAV."""
     pcm_bytes = base64.b64decode(pcm_b64)
@@ -195,7 +196,10 @@ def generate_audio(name, vehicle):
         
     vehicle_type = AOE_VEHICLE_DATA.get(vehicle, {}).get('type', 'vehicle')
     message = AD_MESSAGES.get(vehicle_type, "your perfect vehicle.")
-    text_prompt = f"Say cheerfully: Hello {name}, we saw you were interested in the {vehicle}. {message}. Our team is ready for you to take a test drive. Please call us at (800) 555-0199 or reply to this email to schedule a new appointment."
+    
+    # Updated phone number in the message
+    phone_number = "1800123456" 
+    text_prompt = f"Say cheerfully: Hello {name}, we saw you were interested in the {vehicle}. {message}. Our team is ready for you to take a test drive. Please call us at {phone_number} or reply to this email to schedule a new appointment."
 
     payload = {
       "contents": [{"parts": [{"text": text_prompt}]}],
