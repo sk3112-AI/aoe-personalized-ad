@@ -196,27 +196,46 @@ def generate_audio(name, vehicle):
         
     vehicle_type = AOE_VEHICLE_DATA.get(vehicle, {}).get('type', 'vehicle')
     
-    # Check if sales notes exist for the lead
+    # Fetch sales notes using the customer's full name for personalization
     try:
-        # Fetch sales notes using the customer's full name
         response = supabase.from_(SUPABASE_TABLE_NAME).select(
             "sales_notes"
         ).eq('full_name', name).single().execute()
-        sales_notes = response.data.get('sales_notes', '')
+        sales_notes = response.data.get('sales_notes', '') or ''
     except Exception as e:
         logging.warning(f"Failed to fetch sales notes for {name}: {e}")
         sales_notes = ''
 
-    # Check for relevance of sales notes
-    relevant_keywords = ["maintenance", "service", "cost", "price", "charging", "range", "feature"]
-    is_notes_relevant = any(keyword in sales_notes.lower() for keyword in relevant_keywords)
-
-    if is_notes_relevant and sales_notes.strip():
-        # Use sales notes in the prompt if relevant
-        text_prompt = f"Say cheerfully: Hello {name}, our team left a note about your inquiry. We've taken your feedback on board regarding {sales_notes} and are ready to address your questions. Please call us at 1800123456 or reply to this email to schedule a new appointment."
+    # Define a more comprehensive list of relevant keywords
+    relevant_keywords_map = {
+        "pricing_financing": ["price", "cost", "financing", "budget", "affordability"],
+        "maintenance_service": ["maintenance", "service", "warranty", "long-term care"],
+        "ev_concerns": ["charging", "range", "battery", "infrastructure"],
+        "features": ["feature", "tech", "technology", "infotainment", "design", "safety", "performance"]
+    }
+    
+    # Check for relevant keywords in the sales notes
+    found_keywords = []
+    for key, keywords in relevant_keywords_map.items():
+        if any(keyword in sales_notes.lower() for keyword in keywords):
+            found_keywords.append(key)
+    
+    # Craft the text prompt based on relevance and detected keywords
+    phone_number = "1800123456" 
+    if found_keywords and sales_notes.strip():
+        # Build a personalized message based on the specific keywords found
+        if "pricing_financing" in found_keywords:
+            text_prompt = f"Hello {name}, we know you had questions about the pricing and financing options for the {vehicle}. Our team has some exciting details to share. Please call us at {phone_number} or reply to this email to schedule a new appointment."
+        elif "maintenance_service" in found_keywords:
+            text_prompt = f"Hello {name}, we heard your feedback on long-term maintenance and service for the {vehicle}. We'd love to clarify all your doubts. Please call us at {phone_number} or reply to this email to schedule a new appointment."
+        elif "ev_concerns" in found_keywords and vehicle_type == "Electric Compact":
+            text_prompt = f"Hello {name}, we understand you had some questions about the charging and range of the {vehicle}. We have the answers you need. Please call us at {phone_number} or reply to this email to schedule a new appointment."
+        else:
+            # Fallback for relevant but unspecific notes
+            text_prompt = f"Hello {name}, we understand from our last conversation that you had a few questions. We're ready to provide some more details. Please call us at {phone_number} or reply to this email to schedule a new appointment."
     else:
-        # Use a more generic, but still personalized message
-        text_prompt = f"Say cheerfully: Hello {name}, we saw you were interested in the {vehicle}. Our team has a message for you. We're ready for you to take a test drive. Please call us at 1800123456 or reply to this email to schedule a new appointment."
+        # Generic prompt for non-relevant or missing notes
+        text_prompt = f"Hello {name}, we saw you were interested in the {vehicle}. Our team has a message for you. We're ready for you to take a test drive. Please call us at {phone_number} or reply to this email to schedule a new appointment."
 
     # Use the correct voice based on vehicle type
     voice_map = {
@@ -388,7 +407,7 @@ async def send_ad_email(request_body: AdEmailRequest):
         email_image_url = AOE_VEHICLE_IMAGES.get(vehicle, ["https://placehold.co/600x338/1F2937/D1D5DB?text=AOE+Motors"])[0]
 
         # 3. Build the URL for the landing page
-        ad_page_url = f"https://aoe-personalized-ad.onrender.com/ad?id={request_id}" # <-- IMPORTANT: Replace with your deployed URL
+        ad_page_url = f"https://YOUR_RENDER_SERVICE_URL/ad?id={request_id}" # <-- IMPORTANT: Replace with your deployed URL
 
         # 4. Construct the email body
         email_body_html = f"""
